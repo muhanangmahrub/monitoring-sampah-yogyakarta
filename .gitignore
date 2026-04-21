@@ -12,3 +12,9 @@ wheels/
 clean-dirty-garbage-containers/
 clean-dirty-garbage-containers-V6.1.zip
 dataset/
+
+# Environment variables
+.env
+
+# YOLO run files
+runs/
