@@ -1,10 +1,8 @@
 import redis
 import uuid
 import json
-import onnxruntime as ort
 from fastapi import FastAPI
 from pydantic import BaseModel
-from app.utils import preprocessing
 
 app = FastAPI()
 
@@ -12,6 +10,7 @@ redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=T
 
 class FrameList(BaseModel):
     frames: list[str]
+    camera_id: int
 
 @app.get("/")
 async def root():
@@ -21,8 +20,11 @@ async def root():
 async def create_task(frame_list: FrameList):
     task_ids = []
     for frame in frame_list.frames:
-        task_ids.append(str(uuid.uuid4()))
-        redis_client.rpush('task_queue', json.dumps({"frame": frame, "task_id": task_ids[-1]}))
+        if redis_client.llen("task_queue") > 5:
+            pass
+        else:
+            task_ids.append(str(uuid.uuid4()))
+            redis_client.rpush('task_queue', json.dumps({"frame": frame, "task_id": task_ids[-1], "camera_id": frame_list.camera_id}))
     return {"task_ids": task_ids, "status": "queued"}
 
 

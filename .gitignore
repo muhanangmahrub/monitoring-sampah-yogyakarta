@@ -20,3 +20,6 @@ dataset/
 # YOLO run files
 runs/
 mlartifacts/
+
+# Others
+video_testing.mp4
