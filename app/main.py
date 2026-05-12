@@ -1,11 +1,17 @@
 import redis
 import uuid
 import json
-from fastapi import FastAPI
+import asyncio
+import psycopg2
+import os
+from dotenv import load_dotenv
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
+from psycopg2.extras import RealDictCursor
+
+load_dotenv()
 
 app = FastAPI()
-
 redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=True)
 
 class FrameList(BaseModel):
@@ -34,3 +40,35 @@ async def get_task_result(task_id: str):
     if not results:
         return {"task_id": task_id, "status": "processing"}
     return {"task_id": task_id, "status": "completed", "result": results}
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    conn = psycopg2.connect(
+        host="localhost",
+        database=os.getenv("INFERENCE_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASS_INFERENCE"),
+    )
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    data = await websocket.receive_text()
+    last_id = json.loads(data).get("last_id", None)
+    try:
+        while True:
+            if last_id:
+                cursor.execute("SELECT * FROM detections WHERE detection_id > %s", (last_id,))
+                new_tasks = cursor.fetchall()
+            else:
+                cursor.execute("SELECT * FROM detections")
+                new_tasks = cursor.fetchall()
+            if new_tasks:
+                new_tasks = [dict(task) for task in new_tasks]
+                new_tasks = [{**dict(task), "timestamp": task["timestamp"].strftime("%Y-%m-%d %H:%M:%S")} for task in new_tasks]
+                await websocket.send_json({"tasks": new_tasks})
+                last_id = new_tasks[-1]["detection_id"]
+            await asyncio.sleep(5)
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
+    finally:
+        cursor.close()
+        conn.close()
