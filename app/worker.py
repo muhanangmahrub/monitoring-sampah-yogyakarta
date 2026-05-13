@@ -23,7 +23,6 @@ cursor = conn.cursor()
 while True:
     _, task = redis_client.brpop('task_queue', timeout=0)
     task = json.loads(task)
-    print(f"Processing task {task['task_id']} from camera {task['camera_id']}")
     frame = preprocessing.preprocess(task["frame"])
     inputs = {session.get_inputs()[0].name: frame["batch"]}
     outputs = session.run(None, inputs)

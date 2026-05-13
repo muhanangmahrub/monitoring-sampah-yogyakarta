@@ -25,3 +25,6 @@ mlartifacts/
 video_testing.mp4
 response_1777349958303.json
 dump.rdb
+best.onnx
+best.pt
+yolo26n.pt
