@@ -5,10 +5,11 @@ import { useEffect, useState } from "react";
 interface Detection {
   camera_id: number;
   detection_id: number;
-  class: number;
+  class: string;
   score: number;
   box: [number, number, number, number];
   timestamp: string;
+  streakStart: string;
 }
 
 export default function Dashboard() {
@@ -23,14 +24,20 @@ export default function Dashboard() {
     };
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      const cameras = data.tasks.reduce(
-        (acc: { [key: number]: Detection }, item: Detection) => {
-          acc[item.camera_id] = item;
-          return acc;
-        },
-        {},
-      );
-      setData(cameras);
+      setData((prev) => {
+        return data.tasks.reduce(
+          (acc: { [key: number]: Detection }, item: Detection) => {
+            const prevCamera = prev?.[item.camera_id];
+            const streakStart =
+              prevCamera && prevCamera.class === item.class
+                ? prevCamera.streakStart
+                : item.timestamp;
+            acc[item.camera_id] = { ...item, streakStart };
+            return acc;
+          },
+          { ...prev },
+        );
+      });
     };
 
     return () => {
@@ -40,10 +47,43 @@ export default function Dashboard() {
   }, []);
 
   return (
-    <div>
-      <h1>Dashboard Monitoring</h1>
+    <div className="bg-gray-100 min-h-screen p-5">
+      <h1 className="text-2xl/7 font-bold text-gray-800 sm:truncate sm:text-3xl sm:tracking-tight">
+        Dashboard Monitoring
+      </h1>
       {data ? (
-        <pre>{JSON.stringify(data, null, 2)}</pre>
+        <div className="grid grid-cols-3 gap-5">
+          {Object.values(data).map((item) => (
+            <div
+              key={item.camera_id}
+              className="max-w-sm rounded overflow-hidden shadow-lg p-4 bg-white"
+            >
+              <div className="px-6 py-4">
+                <h2 className="text-gray-700 text-base">
+                  Camera ID: {item.camera_id}
+                </h2>
+                <p className="text-gray-600">
+                  Detection ID: {item.detection_id}
+                </p>
+                <span
+                  className={
+                    item.class === "dirty"
+                      ? "bg-red-500 text-white px-2 py-1 rounded"
+                      : "bg-green-500 text-white px-2 py-1 rounded"
+                  }
+                >
+                  Class: {item.class}
+                </span>
+                <p className="text-gray-600">Score: {item.score.toFixed(2)}</p>
+                {/* <p className="text-gray-600">Box: {item.box.join(", ")}</p> */}
+                <p className="text-gray-600">Timestamp: {item.timestamp}</p>
+                <p className="text-gray-600">
+                  Streak Start: {item.streakStart}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
         <p>Loading data...</p>
       )}
