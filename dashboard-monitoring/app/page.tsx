@@ -10,6 +10,7 @@ interface Detection {
   box: [number, number, number, number];
   timestamp: string;
   streakStart: string;
+  latency_ms: number;
 }
 
 export default function Dashboard() {
@@ -80,6 +81,7 @@ export default function Dashboard() {
                 <p className="text-gray-600">
                   Streak Start: {item.streakStart}
                 </p>
+                <p className="text-gray-600">Latency: {item.latency_ms}ms</p>
               </div>
             </div>
           ))}

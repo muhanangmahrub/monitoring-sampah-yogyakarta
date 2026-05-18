@@ -4,6 +4,7 @@ import onnxruntime as ort
 import numpy as np
 import psycopg2
 import os
+import time
 from app.utils import preprocessing, postprocessing
 from dotenv import load_dotenv
 
@@ -35,10 +36,11 @@ while True:
         "cls": cls.tolist()
     })})
 
+    end_time = time.time()
     if len(box) == 0:
         continue
     cursor.execute(
-        "INSERT INTO detections (camera_id, task_id, class, score, box) VALUES (%s, %s, %s, %s, %s)",
-        (task["camera_id"], task["task_id"], "dirty" if cls[0] == 1 else "clean", float(score[0]), json.dumps(box.tolist()))
+        "INSERT INTO detections (camera_id, task_id, class, score, box, start_time, end_time, latency_ms) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+        (task["camera_id"], task["task_id"], "dirty" if cls[0] == 1 else "clean", float(score[0]), json.dumps(box.tolist()), task['start_time'], end_time, (end_time - task['start_time'])*1000)
     )
     conn.commit()

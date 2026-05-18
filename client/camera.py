@@ -16,9 +16,10 @@ while True:
     if not ret:
         print("Cant't receive frame (stream end). Exiting ...")
         break
+    start_time = time.time()
     _, buffer = cv2.imencode('.jpg', frame)
     b64_string = base64.b64encode(buffer).decode('utf-8')
-    response = requests.post('http://localhost:8000/tasks', json={"frames": [b64_string], "camera_id": 3})
+    response = requests.post('http://localhost:8000/tasks', json={"frames": [b64_string], "camera_id": 3, "start_time": start_time})
     task_ids = response.json()["task_ids"]
     if len(task_ids) == 0:
         continue

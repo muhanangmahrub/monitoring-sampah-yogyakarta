@@ -6,5 +6,8 @@ CREATE TABLE IF NOT EXISTS detections (
     class VARCHAR(20) NOT NULL,
     score FLOAT NOT NULL,
     box JSONB NOT NULL,
+    start_time FLOAT NOT NULL,
+    end_time FLOAT NOT NULL,
+    latency_ms INT NOT NULL,
     FOREIGN KEY (camera_id) REFERENCES cameras(camera_id)
 );

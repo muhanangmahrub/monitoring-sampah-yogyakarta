@@ -17,6 +17,7 @@ redis_client = redis.Redis(host="localhost", port=6379, db=0, decode_responses=T
 class FrameList(BaseModel):
     frames: list[str]
     camera_id: int
+    start_time: float
 
 @app.get("/")
 async def root():
@@ -30,7 +31,7 @@ async def create_task(frame_list: FrameList):
             pass
         else:
             task_ids.append(str(uuid.uuid4()))
-            redis_client.rpush('task_queue', json.dumps({"frame": frame, "task_id": task_ids[-1], "camera_id": frame_list.camera_id}))
+            redis_client.rpush('task_queue', json.dumps({"frame": frame, "task_id": task_ids[-1], "camera_id": frame_list.camera_id, "start_time": frame_list.start_time}))
     return {"task_ids": task_ids, "status": "queued"}
 
 
